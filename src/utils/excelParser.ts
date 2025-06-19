@@ -31,6 +31,7 @@ export const parseExcelFile = async (file: File): Promise<Product[]> => {
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
         
         console.log(`Processing ${file.name} with ${jsonData.length} rows`);
+        console.log('First few rows:', jsonData.slice(0, 5));
         
         const products: Product[] = [];
         
@@ -44,24 +45,30 @@ export const parseExcelFile = async (file: File): Promise<Product[]> => {
           console.log(`Processing row ${i}:`, row);
           
           try {
-            // New Excel structure:
-            // A: Ürün Adı, B: Liste Fiyatı, C: İskonto %5 Fiyatı, 
-            // D: İskonto %10 Fiyatı, E: İskonto %15 Fiyatı, F: KDV Oranı
-            const urunAdi = String(row[0] || '').trim();
-            const listeFiyati = parseFloat(String(row[1] || '0').replace(',', '.')) || 0;
-            const iskonto5 = parseFloat(String(row[2] || '0').replace(',', '.')) || 0;
-            const iskonto10 = parseFloat(String(row[3] || '0').replace(',', '.')) || 0;
-            const iskonto15 = parseFloat(String(row[4] || '0').replace(',', '.')) || 0;
-            const kdvOrani = parseFloat(String(row[5] || '0').replace(',', '.')) || 0;
+            // Excel structure based on console logs:
+            // A (0): Stok Kodu, B (1): Firma, C (2): Ürün Adı, D (3): Birim
+            // E (4): Liste Fiyatı, F (5): İskonto %5, G (6): İskonto %10, 
+            // H (7): İskonto %15, I (8): KDV Oranı
+            
+            const stokKodu = String(row[0] || '').trim();
+            const firma = String(row[1] || '').trim();
+            const urunAdi = String(row[2] || '').trim();
+            const birim = String(row[3] || '').trim();
+            const listeFiyati = parseFloat(String(row[4] || '0').replace(',', '.')) || 0;
+            const iskonto5 = parseFloat(String(row[5] || '0').replace(',', '.')) || 0;
+            const iskonto10 = parseFloat(String(row[6] || '0').replace(',', '.')) || 0;
+            const iskonto15 = parseFloat(String(row[7] || '0').replace(',', '.')) || 0;
+            const kdvOrani = parseFloat(String(row[8] || '0').replace(',', '.')) || 0;
             
             // Find the lowest price (most advantageous discount)
             const discountPrices = [iskonto5, iskonto10, iskonto15].filter(price => price > 0);
             const enDusukFiyat = discountPrices.length > 0 ? Math.min(...discountPrices) : listeFiyati;
             
             const product: Product = {
-              stokKodu: `${file.name}-${i}`, // Generate unique code
-              firma: file.name.replace(/\.[^/.]+$/, ""), // Remove extension for company name
+              stokKodu: stokKodu || `${file.name}-${i}`, // Use actual stock code or generate one
+              firma: firma || file.name.replace(/\.[^/.]+$/, ""), // Use actual company or filename
               urunAdi,
+              birim: birim || undefined,
               listeFiyati,
               iskonto5: iskonto5 > 0 ? iskonto5 : undefined,
               iskonto10: iskonto10 > 0 ? iskonto10 : undefined,
@@ -71,12 +78,16 @@ export const parseExcelFile = async (file: File): Promise<Product[]> => {
               supplier: file.name
             };
             
-            // Only add products with valid data
-            if (product.urunAdi && product.listeFiyati > 0) {
+            // Only add products with valid data - check for actual product name and reasonable price
+            if (product.urunAdi && product.urunAdi.length > 2 && product.listeFiyati > 0) {
               products.push(product);
               console.log(`Added product: ${product.urunAdi} - En düşük: ${product.enDusukFiyat} TL`);
             } else {
-              console.log(`Skipped invalid row ${i}:`, product);
+              console.log(`Skipped invalid row ${i}:`, {
+                urunAdi: product.urunAdi,
+                listeFiyati: product.listeFiyati,
+                reason: !product.urunAdi ? 'No product name' : product.urunAdi.length <= 2 ? 'Product name too short' : 'Invalid price'
+              });
             }
           } catch (error) {
             console.error(`Error processing row ${i}:`, error, row);
