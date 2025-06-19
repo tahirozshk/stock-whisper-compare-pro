@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Calculator, TrendingUp, Save } from 'lucide-react';
+import { Calculator, TrendingUp, Save, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import jsPDF from 'jspdf';
 
 interface Product {
   stokKodu: string;
@@ -115,6 +115,61 @@ const ProfitCalculator: React.FC<ProfitCalculatorProps> = ({ selectedProducts, i
         description: "Kar hesaplaması başarıyla kaydedildi."
       });
     }
+  };
+
+  const generatePDF = (product: Product, sellingPriceInCurrency: number, costPriceInCurrency: number, profitInCurrency: number, sellingPriceInTRY: number) => {
+    const doc = new jsPDF();
+    
+    // PDF başlığı
+    doc.setFontSize(20);
+    doc.text('Kar Hesaplama Raporu', 20, 30);
+    
+    // Tarih
+    doc.setFontSize(12);
+    doc.text(`Tarih: ${new Date().toLocaleDateString('tr-TR')}`, 20, 50);
+    
+    // Ürün bilgileri
+    doc.setFontSize(14);
+    doc.text('Ürün Bilgileri:', 20, 70);
+    doc.setFontSize(11);
+    doc.text(`Ürün Adı: ${product.urunAdi}`, 20, 85);
+    doc.text(`Firma: ${product.firma}`, 20, 95);
+    doc.text(`Tedarikçi: ${product.supplier}`, 20, 105);
+    doc.text(`Stok Kodu: ${product.stokKodu}`, 20, 115);
+    
+    // Fiyat bilgileri
+    doc.setFontSize(14);
+    doc.text('Fiyat Bilgileri (TL):', 20, 135);
+    doc.setFontSize(11);
+    doc.text(`Liste Fiyatı: ₺${product.listeFiyati.toFixed(2)}`, 20, 150);
+    if (product.iskonto5) doc.text(`%5 İndirimli: ₺${product.iskonto5.toFixed(2)}`, 20, 160);
+    if (product.iskonto10) doc.text(`%10 İndirimli: ₺${product.iskonto10.toFixed(2)}`, 20, 170);
+    if (product.iskonto15) doc.text(`%15 İndirimli: ₺${product.iskonto15.toFixed(2)}`, 20, 180);
+    doc.text(`En Düşük Fiyat: ₺${product.enDusukFiyat.toFixed(2)}`, 20, 190);
+    
+    // Hesaplama detayları
+    doc.setFontSize(14);
+    doc.text('Kar Hesaplama Detayları:', 20, 210);
+    doc.setFontSize(11);
+    doc.text(`Para Birimi: ${selectedCurrency}`, 20, 225);
+    doc.text(`Maliyet Fiyatı: ${currencySymbols[selectedCurrency]}${costPriceInCurrency.toFixed(2)}`, 20, 235);
+    doc.text(`Kar Marjı: %${profitMargin}`, 20, 245);
+    if (customDiscount > 0) doc.text(`Ek İndirim: %${customDiscount}`, 20, 255);
+    doc.text(`Kar Miktarı: ${currencySymbols[selectedCurrency]}${profitInCurrency.toFixed(2)}`, 20, 265);
+    
+    // Sonuçlar
+    doc.setFontSize(16);
+    doc.text(`Satış Fiyatı: ${currencySymbols[selectedCurrency]}${sellingPriceInCurrency.toFixed(2)}`, 20, 285);
+    doc.text(`TL Karşılığı: ₺${sellingPriceInTRY.toFixed(2)}`, 20, 295);
+    
+    // PDF'i indir
+    const fileName = `kar-hesaplama-${product.urunAdi.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+    
+    toast({
+      title: "PDF İndirildi",
+      description: "Hesaplama raporu başarıyla indirildi."
+    });
   };
 
   const currencySymbols: Record<Currency, string> = {
@@ -271,6 +326,15 @@ const ProfitCalculator: React.FC<ProfitCalculatorProps> = ({ selectedProducts, i
                       </span>
                     </div>
                     <div className="flex justify-end mt-3">
+                      <Button
+                        onClick={() => generatePDF(product, sellingPriceInCurrency, costPriceInCurrency, profitInCurrency, sellingPriceInTRY)}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                        size="sm"
+                      >
+                        <Download className="h-4 w-4" />
+                        PDF İndir
+                      </Button>
                       <Button
                         onClick={() => saveProfitCalculation(product, sellingPriceInTRY, baseCostTRY)}
                         className="flex items-center gap-2"
