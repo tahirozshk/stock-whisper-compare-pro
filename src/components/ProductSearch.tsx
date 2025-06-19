@@ -11,10 +11,13 @@ interface Product {
   stokKodu: string;
   firma: string;
   urunAdi: string;
-  birim: string;
-  rafFiyati: number;
-  iskontoOrani: number;
+  birim?: string;
   listeFiyati: number;
+  iskonto5?: number;
+  iskonto10?: number;
+  iskonto15?: number;
+  kdvOrani?: number;
+  enDusukFiyat: number;
   resimYolu?: string;
   supplier: string;
 }
@@ -42,8 +45,8 @@ const ProductSearch: React.FC<ProductSearchProps> = ({ allProducts }) => {
     
     // Fiyata göre sırala (ucuzdan pahalıya)
     const sorted = filtered.sort((a, b) => {
-      const priceA = a.listeFiyati || 0;
-      const priceB = b.listeFiyati || 0;
+      const priceA = a.enDusukFiyat || 0;
+      const priceB = b.enDusukFiyat || 0;
       return priceA - priceB;
     });
     
@@ -123,24 +126,43 @@ const ProductSearch: React.FC<ProductSearchProps> = ({ allProducts }) => {
                             {product.firma}
                           </Badge>
                           <Badge variant="outline" className="text-xs">
-                            Kod: {product.stokKodu}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
                             Dosya: {product.supplier}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-lg font-bold text-green-600">
-                            ₺{product.listeFiyati?.toFixed(2)}
+                        
+                        {/* Iskonto Fiyatları */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+                          <div className="text-sm">
+                            <span className="text-gray-600">Liste:</span>
+                            <div className="font-medium">₺{product.listeFiyati?.toFixed(2)}</div>
                           </div>
-                          {product.rafFiyati && product.rafFiyati !== product.listeFiyati && (
-                            <div className="text-sm text-gray-500 line-through">
-                              ₺{product.rafFiyati?.toFixed(2)}
+                          {product.iskonto5 && (
+                            <div className="text-sm">
+                              <span className="text-gray-600">%5 İndirim:</span>
+                              <div className="font-medium text-orange-600">₺{product.iskonto5.toFixed(2)}</div>
                             </div>
                           )}
-                          {product.iskontoOrani > 0 && (
+                          {product.iskonto10 && (
+                            <div className="text-sm">
+                              <span className="text-gray-600">%10 İndirim:</span>
+                              <div className="font-medium text-orange-600">₺{product.iskonto10.toFixed(2)}</div>
+                            </div>
+                          )}
+                          {product.iskonto15 && (
+                            <div className="text-sm">
+                              <span className="text-gray-600">%15 İndirim:</span>
+                              <div className="font-medium text-orange-600">₺{product.iskonto15.toFixed(2)}</div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-4">
+                          <div className="text-lg font-bold text-green-600">
+                            En Düşük: ₺{product.enDusukFiyat?.toFixed(2)}
+                          </div>
+                          {product.kdvOrani && (
                             <Badge variant="secondary" className="text-xs">
-                              %{product.iskontoOrani} İndirim
+                              KDV %{product.kdvOrani}
                             </Badge>
                           )}
                         </div>
@@ -176,7 +198,7 @@ const ProductSearch: React.FC<ProductSearchProps> = ({ allProducts }) => {
 
       {selectedProductForCalculator && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold">Kar Hesaplayıcı</h2>

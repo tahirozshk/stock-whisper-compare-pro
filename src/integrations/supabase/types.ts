@@ -9,13 +9,106 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      exchange_rates: {
+        Row: {
+          currency_code: string
+          id: string
+          rate_to_try: number
+          updated_at: string | null
+        }
+        Insert: {
+          currency_code: string
+          id?: string
+          rate_to_try: number
+          updated_at?: string | null
+        }
+        Update: {
+          currency_code?: string
+          id?: string
+          rate_to_try?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          name: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profit_calculations: {
+        Row: {
+          calculated_at: string | null
+          calculation_date: string | null
+          currency: string | null
+          final_price: number
+          id: string
+          original_price: number
+          product_name: string
+          profit_margin: number
+          supplier_name: string
+          user_id: string | null
+        }
+        Insert: {
+          calculated_at?: string | null
+          calculation_date?: string | null
+          currency?: string | null
+          final_price: number
+          id?: string
+          original_price: number
+          product_name: string
+          profit_margin: number
+          supplier_name: string
+          user_id?: string | null
+        }
+        Update: {
+          calculated_at?: string | null
+          calculation_date?: string | null
+          currency?: string | null
+          final_price?: number
+          id?: string
+          original_price?: number
+          product_name?: string
+          profit_margin?: number
+          supplier_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_daily_profit_summary: {
+        Args: { user_uuid: string; target_date?: string }
+        Returns: {
+          total_calculations: number
+          total_profit_amount: number
+          average_margin: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

@@ -1,21 +1,23 @@
 
 import React, { useState } from 'react';
-import { Package, Search, Calculator, Upload } from 'lucide-react';
+import { Package, Search, Upload } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import FileUpload from '@/components/FileUpload';
 import ProductSearch from '@/components/ProductSearch';
-import ProfitCalculator from '@/components/ProfitCalculator';
 
 interface Product {
   stokKodu: string;
   firma: string;
   urunAdi: string;
-  birim: string;
-  rafFiyati: number;
-  iskontoOrani: number;
+  birim?: string;
   listeFiyati: number;
+  iskonto5?: number;
+  iskonto10?: number;
+  iskonto15?: number;
+  kdvOrani?: number;
+  enDusukFiyat: number;
   resimYolu?: string;
   supplier: string;
 }
@@ -23,7 +25,6 @@ interface Product {
 const Index = () => {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; products: Product[]; }[]>([]);
-  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
 
   const handleFilesProcessed = (products: Product[], fileName: string) => {
     console.log(`Adding products from ${fileName}:`, products.length);
@@ -42,9 +43,6 @@ const Index = () => {
     
     setAllProducts(prev => prev.filter(product => product.supplier !== fileName));
     setUploadedFiles(prev => prev.filter(file => file.name !== fileName));
-    
-    // If removed file had selected products, clear selection
-    setSelectedProducts(prev => prev.filter(product => product.supplier !== fileName));
   };
 
   const uniqueProductCodes = new Set(allProducts.map(p => p.stokKodu)).size;
@@ -121,7 +119,7 @@ const Index = () => {
 
         {/* Main Tabs */}
         <Tabs defaultValue="upload" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="upload" className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
               Dosya Yükle
@@ -129,10 +127,6 @@ const Index = () => {
             <TabsTrigger value="search" className="flex items-center gap-2">
               <Search className="h-4 w-4" />
               Ürün Ara
-            </TabsTrigger>
-            <TabsTrigger value="calculator" className="flex items-center gap-2">
-              <Calculator className="h-4 w-4" />
-              Kar Hesaplayıcı
             </TabsTrigger>
           </TabsList>
 
@@ -147,12 +141,6 @@ const Index = () => {
           <TabsContent value="search">
             <ProductSearch 
               allProducts={allProducts}
-            />
-          </TabsContent>
-
-          <TabsContent value="calculator">
-            <ProfitCalculator 
-              selectedProducts={selectedProducts}
             />
           </TabsContent>
         </Tabs>

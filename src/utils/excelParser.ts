@@ -5,10 +5,13 @@ export interface Product {
   stokKodu: string;
   firma: string;
   urunAdi: string;
-  birim: string;
-  rafFiyati: number;
-  iskontoOrani: number;
+  birim?: string;
   listeFiyati: number;
+  iskonto5?: number;
+  iskonto10?: number;
+  iskonto15?: number;
+  kdvOrani?: number;
+  enDusukFiyat: number;
   resimYolu?: string;
   supplier: string;
 }
@@ -41,25 +44,37 @@ export const parseExcelFile = async (file: File): Promise<Product[]> => {
           console.log(`Processing row ${i}:`, row);
           
           try {
-            // Based on your Excel structure:
-            // A: STOK KODU, B: FİRMA, C: ÜRÜN ADI, D: BİRİM, 
-            // E: RAF FİYATI, F: İSKONTO ORANI, G: LİSTE FİYATI
+            // New Excel structure:
+            // A: Ürün Adı, B: Liste Fiyatı, C: İskonto %5 Fiyatı, 
+            // D: İskonto %10 Fiyatı, E: İskonto %15 Fiyatı, F: KDV Oranı
+            const urunAdi = String(row[0] || '').trim();
+            const listeFiyati = parseFloat(String(row[1] || '0').replace(',', '.')) || 0;
+            const iskonto5 = parseFloat(String(row[2] || '0').replace(',', '.')) || 0;
+            const iskonto10 = parseFloat(String(row[3] || '0').replace(',', '.')) || 0;
+            const iskonto15 = parseFloat(String(row[4] || '0').replace(',', '.')) || 0;
+            const kdvOrani = parseFloat(String(row[5] || '0').replace(',', '.')) || 0;
+            
+            // Find the lowest price (most advantageous discount)
+            const discountPrices = [iskonto5, iskonto10, iskonto15].filter(price => price > 0);
+            const enDusukFiyat = discountPrices.length > 0 ? Math.min(...discountPrices) : listeFiyati;
+            
             const product: Product = {
-              stokKodu: String(row[0] || '').trim(),
-              firma: String(row[1] || '').trim(),
-              urunAdi: String(row[2] || '').trim(),
-              birim: String(row[3] || '').trim(),
-              rafFiyati: parseFloat(String(row[4] || '0').replace(',', '.')) || 0,
-              iskontoOrani: parseFloat(String(row[5] || '0').replace(',', '.')) || 0,
-              listeFiyati: parseFloat(String(row[6] || '0').replace(',', '.')) || 0,
-              resimYolu: row[7] ? String(row[7]).trim() : undefined,
+              stokKodu: `${file.name}-${i}`, // Generate unique code
+              firma: file.name.replace(/\.[^/.]+$/, ""), // Remove extension for company name
+              urunAdi,
+              listeFiyati,
+              iskonto5: iskonto5 > 0 ? iskonto5 : undefined,
+              iskonto10: iskonto10 > 0 ? iskonto10 : undefined,
+              iskonto15: iskonto15 > 0 ? iskonto15 : undefined,
+              kdvOrani: kdvOrani > 0 ? kdvOrani : undefined,
+              enDusukFiyat,
               supplier: file.name
             };
             
             // Only add products with valid data
-            if (product.stokKodu && product.urunAdi && product.listeFiyati > 0) {
+            if (product.urunAdi && product.listeFiyati > 0) {
               products.push(product);
-              console.log(`Added product: ${product.urunAdi} - ${product.listeFiyati} TL`);
+              console.log(`Added product: ${product.urunAdi} - En düşük: ${product.enDusukFiyat} TL`);
             } else {
               console.log(`Skipped invalid row ${i}:`, product);
             }
